@@ -17,21 +17,21 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Unzip and Build
+      - name: Unzip and Inspect
         run: |
           mkdir -p extracted
           unzip -q elementpowers.zip -d extracted
-          
-          # البحث عن مكان ملف gradlew بدقة والانتقال إليه
-          GRADLE_FILE=$(find extracted -name "gradlew" | head -n 1)
-          if [ -z "$GRADLE_FILE" ]; then
-            echo "ERROR: gradlew not found!"
-            exit 1
-          fi
-          
-          PROJECT_ROOT=$(dirname "$GRADLE_FILE")
-          echo "Entering project directory: $PROJECT_ROOT"
-          cd "$PROJECT_ROOT"
+          echo "--- Contents of extracted folder ---"
+          ls -la extracted
+          echo "--- Searching for build.gradle or gradlew ---"
+          find extracted -name "build.gradle" -o -name "gradlew"
+
+      - name: Build Mod
+        run: |
+          # الانتقال المباشر لأول مجلد فرعي أو المجلد الرئيسي
+          cd extracted
+          SUBDIR=$(ls -A | head -n 1)
+          cd "$SUBDIR"
           
           chmod +x gradlew
           ./gradlew build --no-daemon
