@@ -5,10 +5,6 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
-permissions:
-  contents: write
-  actions: read
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,14 +19,22 @@ jobs:
 
       - name: Unzip and Build
         run: |
-          unzip -q elementpowers.zip -d extracted_mod
-          cd extracted_mod
-          # إذا كان الملف المضغوط يضم مجلداً رئيسياً، سندخل داخله تلقائياً
-          if [ -d "$(ls -A | head -n 1)" ] && [ "$(ls -l | grep "^d" | wc -l)" -eq 1 ]; then
-            cd "$(ls -A | head -n 1)"
+          mkdir -p extracted
+          unzip -q elementpowers.zip -d extracted
+          
+          # البحث عن مكان ملف gradlew بدقة والانتقال إليه
+          GRADLE_FILE=$(find extracted -name "gradlew" | head -n 1)
+          if [ -z "$GRADLE_FILE" ]; then
+            echo "ERROR: gradlew not found!"
+            exit 1
           fi
+          
+          PROJECT_ROOT=$(dirname "$GRADLE_FILE")
+          echo "Entering project directory: $PROJECT_ROOT"
+          cd "$PROJECT_ROOT"
+          
           chmod +x gradlew
-          ./gradlew build
+          ./gradlew build --no-daemon
 
       - name: Upload JAR Artifact
         uses: actions/upload-artifact@v4
